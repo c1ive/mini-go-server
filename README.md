@@ -1,6 +1,6 @@
 # mini-go-server
 
-A personal project to learn Go by building a minimal HTTP server from scratch — no frameworks, just raw TCP sockets and the standard library.
+A personal project to learn Go by building a minimal HTTP server from scratch.
 
 ## What it does
 
