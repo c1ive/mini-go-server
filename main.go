@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -33,6 +35,16 @@ func createHttpResponse(code int, body string) []byte {
 	)
 }
 
+func openHtmlFile(name string) (string, error) {
+	wd, _ := os.Getwd()
+	path := filepath.Join(wd, "static", name)
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
 func parseHttpRequest(httpRequest string) (string, error) {
 	for line := range strings.Lines(httpRequest) {
 		words := strings.Fields(line)
@@ -49,17 +61,23 @@ func parseHttpRequest(httpRequest string) (string, error) {
 }
 
 func handlePath(path string) (int, string) {
+	getData := func(fileName string, code int) (int, string) {
+		data, err := openHtmlFile(fileName)
+		if err != nil {
+			fmt.Println("openHtmlFile error:", err)
+			return 500, "Failed to open HTML file"
+		}
+		return code, data
+	}
 	switch path {
 	case "/path":
-			return 200, "<html><h1>PATH</h1><p>You have made a GET request to /path!</p></html>"
+		return getData("path.html", 200)
 	case "/admin":
-		return 403, "<html><h1>403 FORBIDDEN</h1><p>You are not allowed to be here...</p></html>"
-	case "/favicon.ico":
-		return 404, ""
+		return getData("admin.html", 403)
 	case "/":
-		return 200, "This is the GO server! Try out to navigate to /path"
+		return getData("index.html", 200)
 	default:
-		return 404, "Error 404, resource not found :("
+		return getData("404.html", 404)
 	}
 }
 
@@ -77,6 +95,7 @@ func handleConnection(conn net.Conn) {
 	path, err := parseHttpRequest(string(buf[:n]))
 	if err != nil {
 		fmt.Println("Error in the http parsing: " + err.Error())
+		conn.Write(createHttpResponse(500, ""))
 		return
 	}
 
